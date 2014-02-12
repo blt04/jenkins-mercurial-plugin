@@ -24,10 +24,30 @@
 
 package hudson.plugins.mercurial;
 
+import hudson.EnvVars;
+import hudson.Launcher;
+import hudson.model.TaskListener;
+import hudson.tools.ToolProperty;
+import hudson.util.StreamTaskListener;
+
+import java.nio.charset.Charset;
+import java.util.Collections;
 import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
+import org.jvnet.hudson.test.JenkinsRule;
+
 public class HgExeTest {
+
+    @Rule public JenkinsRule j = new JenkinsRule();
+    private TaskListener listener;
+
+    @Before public void setUp() {
+        listener = new StreamTaskListener(System.out, Charset.defaultCharset());
+    }
+
     @Test public void pathEquals() {
         assertTrue(HgExe.pathEquals("http://nowhere.net/hg/", "http://nowhere.net/hg/"));
         assertTrue(HgExe.pathEquals("http://nowhere.net/hg", "http://nowhere.net/hg/"));
@@ -42,5 +62,27 @@ public class HgExeTest {
             assertTrue(HgExe.pathEquals("/var/hg/stuff", "file:///var/hg/stuff"));
             assertFalse(HgExe.pathEquals("/var/hg/other", "file:/var/hg/stuff"));
         }
+    }
+
+    @Test public void withouUseHgrc() throws Exception {
+        EnvVars env = new EnvVars();
+        MercurialInstallation inst = new MercurialInstallation("usehgrc", "",
+                "hg", false, false, false, false, Collections
+                        .<ToolProperty<?>> emptyList());
+        Launcher launcher = j.jenkins.createLauncher(listener);
+
+        HgExe hgexe = new HgExe(inst, null, launcher, j.jenkins, listener, env);
+        assertTrue(env.containsKey("HGPLAIN"));
+    }
+
+    @Test public void withUseHgrc() throws Exception {
+        EnvVars env = new EnvVars();
+        MercurialInstallation inst = new MercurialInstallation("usehgrc", "",
+                "hg", false, false, false, true, Collections
+                        .<ToolProperty<?>> emptyList());
+        Launcher launcher = j.jenkins.createLauncher(listener);
+
+        HgExe hgexe = new HgExe(inst, null, launcher, j.jenkins, listener, env);
+        assertFalse(env.containsKey("HGPLAIN"));
     }
 }
