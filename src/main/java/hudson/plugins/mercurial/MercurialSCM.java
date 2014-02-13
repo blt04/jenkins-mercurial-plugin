@@ -95,13 +95,20 @@ public class MercurialSCM extends SCM implements Serializable {
 
     private final String credentialsId;
 
+    private final boolean disableChangeLog;
+
     @Deprecated
     public MercurialSCM(String installation, String source, String branch, String modules, String subdir, HgBrowser browser, boolean clean) {
         this(installation, source, branch, modules, subdir, browser, clean, null);
     }
 
-    @DataBoundConstructor
+    @Deprecated
     public MercurialSCM(String installation, String source, String branch, String modules, String subdir, HgBrowser browser, boolean clean, String credentialsId) {
+        this(installation, source, branch, modules, subdir, browser, clean, credentialsId, false);
+    }
+
+    @DataBoundConstructor
+    public MercurialSCM(String installation, String source, String branch, String modules, String subdir, HgBrowser browser, boolean clean, String credentialsId, boolean disableChangeLog) {
         this.installation = installation;
         this.source = Util.fixEmptyAndTrim(source);
         this.modules = Util.fixNull(modules);
@@ -115,6 +122,7 @@ public class MercurialSCM extends SCM implements Serializable {
         this.branch = branch;
         this.browser = browser;
         this.credentialsId = credentialsId;
+        this.disableChangeLog = disableChangeLog;
     }
 
     private void parseModules() {
@@ -159,6 +167,10 @@ public class MercurialSCM extends SCM implements Serializable {
 
     public String getCredentialsId() {
         return credentialsId;
+    }
+
+    public boolean isDisableChangeLog() {
+        return disableChangeLog;
     }
 
     @CheckForNull StandardUsernameCredentials getCredentials(AbstractProject<?,?> owner) {
@@ -453,6 +465,11 @@ public class MercurialSCM extends SCM implements Serializable {
     }
 
     private void determineChanges(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener, File changelogFile, FilePath repository, String revToBuild) throws IOException, InterruptedException {
+        if (isDisableChangeLog()) {
+            createEmptyChangeLog(changelogFile, listener, "changelog");
+            return;
+        }
+
         AbstractBuild<?, ?> previousBuild = build.getPreviousBuild();
         MercurialTagAction prevTag = previousBuild != null ? findTag(previousBuild) : null;
         if (prevTag == null) {
