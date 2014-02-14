@@ -69,6 +69,18 @@ public abstract class SCMTestBase {
         assertFalse(log, log.contains(" clone --"));
     }
 
+    @Test public void fullClone() throws Exception {
+      FreeStyleProject p = j.createFreeStyleProject();
+      p.setScm(new MercurialSCM(hgInstallation(), repo.getPath(), null, null,
+              null, null, false, null, true, false));
+      m.hg(repo, "init");
+      m.touchAndCommit(repo, "a");
+      String log = m.buildAndCheck(p, "a");
+      assertTrue(log, log.contains(" clone "));
+      assertFalse(log, log.contains(" clone --rev"));
+      assertTrue(log, log.contains(" update --rev"));
+    }
+
     @Bug(4281)
     @Test public void branches() throws Exception {
         m.hg(repo, "init");

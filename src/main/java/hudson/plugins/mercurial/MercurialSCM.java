@@ -95,6 +95,8 @@ public class MercurialSCM extends SCM implements Serializable {
 
     private final String credentialsId;
 
+    private final boolean fullClone;
+
     private final boolean disableChangeLog;
 
     @Deprecated
@@ -104,11 +106,11 @@ public class MercurialSCM extends SCM implements Serializable {
 
     @Deprecated
     public MercurialSCM(String installation, String source, String branch, String modules, String subdir, HgBrowser browser, boolean clean, String credentialsId) {
-        this(installation, source, branch, modules, subdir, browser, clean, credentialsId, false);
+        this(installation, source, branch, modules, subdir, browser, clean, credentialsId, false, false);
     }
 
     @DataBoundConstructor
-    public MercurialSCM(String installation, String source, String branch, String modules, String subdir, HgBrowser browser, boolean clean, String credentialsId, boolean disableChangeLog) {
+    public MercurialSCM(String installation, String source, String branch, String modules, String subdir, HgBrowser browser, boolean clean, String credentialsId, boolean fullClone, boolean disableChangeLog) {
         this.installation = installation;
         this.source = Util.fixEmptyAndTrim(source);
         this.modules = Util.fixNull(modules);
@@ -122,6 +124,7 @@ public class MercurialSCM extends SCM implements Serializable {
         this.branch = branch;
         this.browser = browser;
         this.credentialsId = credentialsId;
+        this.fullClone = fullClone;
         this.disableChangeLog = disableChangeLog;
     }
 
@@ -167,6 +170,10 @@ public class MercurialSCM extends SCM implements Serializable {
 
     public String getCredentialsId() {
         return credentialsId;
+    }
+
+    public boolean isFullClone() {
+        return fullClone;
     }
 
     public boolean isDisableChangeLog() {
@@ -607,13 +614,17 @@ public class MercurialSCM extends SCM implements Serializable {
                 args.add(cachedSource.getRepoLocation());
             } else {
                 args.add("clone");
-                args.add("--rev", toRevision);
+                if (!isFullClone()) {
+                  args.add("--rev", toRevision);
+                }
                 args.add("--noupdate");
                 args.add(cachedSource.getRepoLocation());
             }
         } else {
             args.add("clone");
-            args.add("--rev", toRevision);
+            if (!isFullClone()) {
+              args.add("--rev", toRevision);
+            }
             args.add("--noupdate");
             args.add(source);
         }
